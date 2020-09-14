@@ -49,14 +49,33 @@
     },
 
     /**
+     * Gets link data attributes from the current selection in the editor
+     */
+    getLinkDataAttributes: function(config) {
+      if (!config.parameters || 
+          !config.parameters.editorKernel || 
+          !config.parameters.editorKernel.currentAnalyzedSelection || 
+          !config.parameters.editorKernel.currentAnalyzedSelection.anchors ||
+          config.parameters.editorKernel.currentAnalyzedSelection.anchorCount <= 0) {
+          // something is wrong or no anchor is selected - return empty object
+          return {};
+      }
+
+      var anchor = config.parameters.editorKernel.currentAnalyzedSelection.anchors[0];
+      return anchor.dom.dataset;
+    },
+
+    /**
      * Add fields for internal link (same site) type.
      */
     addInternalLinkFields: function(frag, config) {
+      const selectedPath = this.getLinkDataAttributes(config).linkContentRef;
       frag.appendChild(this.createColumnItem({
         name: "linkContentRef",
         linkType: "internal",
         fn: this.createPathField,
         placeholder: Granite.I18n.get("io.wcm.handler.link.components.granite.form.linkRefContainer.internal.linkContentRef.fieldLabel"),
+        path: selectedPath || "",
         rootPath: config.rootPaths.internal || "/content"
       }));
     },
@@ -65,11 +84,13 @@
      * Add fields for internal link (other site) type.
      */
     addInternalCrossContextLinkFields: function(frag, config) {
+      const selectedPath = this.getLinkDataAttributes(config).linkCrossContextContentRef;
       frag.appendChild(this.createColumnItem({
         name: "linkCrossContextContentRef",
         linkType: "internalCrossContext",
         fn: this.createPathField,
         placeholder: Granite.I18n.get("io.wcm.handler.link.components.granite.form.linkRefContainer.internalCrossContext.linkCrossContextContentRef.fieldLabel"),
+        path: selectedPath || "",
         rootPath: config.rootPaths.internalCrossContext || "/content"
       }));
     },
@@ -91,11 +112,13 @@
      * Add fields for media link type.
      */
     addMediaLinkFields: function(frag, config) {
+      const selectedPath = this.getLinkDataAttributes(config).linkMediaRef;
       frag.appendChild(this.createColumnItem({
         name: "linkMediaRef",
         linkType: "media",
         fn: this.createPathField,
         placeholder: Granite.I18n.get("io.wcm.handler.link.components.granite.form.linkRefContainer.media.linkMediaRef.fieldLabel"),
+        path: selectedPath || "",
         rootPath: config.rootPaths.media || "/content/dam"
       }));
       frag.appendChild(this.createColumnItem({
@@ -193,8 +216,9 @@
     },
 
     createPathField: function(pathfieldConfig) {
-      var rootPath = pathfieldConfig.rootPath;
-      var pickerSrc = "/mnt/overlay/wcm-io/wcm/ui/granite/content/form/pathfield/picker.html?root=" + rootPath + "&filter=hierarchyNotFile&selectionCount=single";
+      var rootPath = Granite.HTTP.encodePath(pathfieldConfig.rootPath);
+      var path = Granite.HTTP.encodePath(pathfieldConfig.path);
+      var pickerSrc = "/mnt/overlay/wcm-io/wcm/ui/granite/content/form/pathfield/picker.html?root=" + rootPath + "&path=" + path + "&filter=hierarchyNotFile&selectionCount=single";
       var suggestionSrc = "/mnt/overlay/wcm-io/wcm/ui/granite/content/form/pathfield/suggestion{.offset,limit}.html?root=" + rootPath + "&filter=hierarchyNotFile{&query}";
 
       var pathfield = document.createElement("foundation-autocomplete");
